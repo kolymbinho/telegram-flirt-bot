@@ -1,7 +1,6 @@
 import os
 import json
-from flask import Flask, request
-from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -20,10 +19,6 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-app = Flask(__name__)
-bot = Bot(token=TELEGRAM_TOKEN)
-
-# Создание Telegram Application
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
 user_personas = {}
@@ -95,19 +90,12 @@ personas = {
 
 
 
-@app.route("/webhook", methods=["POST"])
-async def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    await application.process_update(update)
-    return "ok"
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /choose чтобы выбрать персонажа.")
 
 async def choose_persona(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(p["name"], callback_data=key)] for key, p in personas.items()]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     if update.message:
         await update.message.reply_text("Выбери персонажа:", reply_markup=reply_markup)
     elif update.callback_query:
@@ -119,23 +107,14 @@ async def handle_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     choice = query.data
     user_personas[user_id] = personas[choice]["prompt"]
     user_nsfw_status[user_id] = False
-
     keyboard = [[
         InlineKeyboardButton("🔁 Сменить персонажа", callback_data="change_persona"),
         InlineKeyboardButton("🔓 Включить 18+", callback_data="enable_nsfw"),
         InlineKeyboardButton("❌ Завершить", callback_data="end_session")
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     await query.answer()
     await context.bot.send_message(chat_id=query.message.chat_id, text=f"Ты выбрал: {personas[choice]['name']}", reply_markup=reply_markup)
-
-    photo_path = f"avatars/{choice}.jpg"
-    try:
-        with open(photo_path, 'rb') as photo:
-            await context.bot.send_photo(chat_id=query.message.chat_id, photo=photo)
-    except FileNotFoundError:
-        await context.bot.send_message(chat_id=query.message.chat_id, text="(Аватарка не найдена)")
 
 async def handle_enable_nsfw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -158,17 +137,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_message = update.message.text
     prompt_base = user_personas.get(user_id, "Ты загадочный ИИ.")
-
     prompt = prompt_base + ("\nГовори сексуально..." if user_nsfw_status.get(user_id) else "")
     prompt += f"\nПользователь: {user_message}\nБот:"
     response = get_openrouter_response(prompt)
-
     keyboard = [[
         InlineKeyboardButton("🔁 Сменить персонажа", callback_data="change_persona"),
         InlineKeyboardButton("❌ Завершить", callback_data="end_session")
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_markup=reply_markup)
 
 def get_openrouter_response(prompt):
@@ -188,7 +164,7 @@ def get_openrouter_response(prompt):
     except Exception as e:
         return f"Ошибка: {e}"
 
-# Регистрация хендлеров
+# Handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("choose", choose_persona))
 application.add_handler(CallbackQueryHandler(handle_choice, pattern="^(yulia|diana|margo|sveta|dasha|vika|lera|alisa|katya|eva|oksana|ira|elleria|lilit|hina)$"))
@@ -198,6 +174,9 @@ application.add_handler(CallbackQueryHandler(handle_end_session, pattern="^end_s
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=10000,
+        webhook_url=WEBHOOK_URL
+    )
 
