@@ -2,7 +2,15 @@ import os
 import json
 from flask import Flask, request
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Dispatcher, MessageHandler, CommandHandler, CallbackQueryHandler, Filters
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    ContextTypes,
+    CommandHandler,
+    MessageHandler,
+    CallbackQueryHandler,
+    filters,
+)
 from dotenv import load_dotenv
 import requests
 
@@ -12,13 +20,15 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-bot = Bot(token=TELEGRAM_TOKEN)
 app = Flask(__name__)
+bot = Bot(token=TELEGRAM_TOKEN)
+
+# Создание Telegram Application
+application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
 user_personas = {}
 user_nsfw_status = {}
 
-# Персонажи
 personas = {
     "yulia": {
         "name": "Юля — политическая любовница",
@@ -88,98 +98,68 @@ personas = {
 @app.route("/webhook", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
-    dp = Dispatcher(bot, None, use_context=True)
-
-    # Команды
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("choose", choose_persona))
-
-    # Обработчики кнопок
-    dp.add_handler(CallbackQueryHandler(handle_choice, pattern="^(yulia|diana|margo|sveta|dasha|vika|lera|alisa|katya|eva|oksana|ira|elleria|lilit|hina)$"))
-    dp.add_handler(CallbackQueryHandler(handle_enable_nsfw, pattern="^enable_nsfw$"))
-    dp.add_handler(CallbackQueryHandler(handle_change_persona, pattern="^change_persona$"))
-    dp.add_handler(CallbackQueryHandler(handle_end_session, pattern="^end_session$"))
-
-    # Обычные сообщения
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-    # Обработка обновления
-    dp.process_update(update)
+    application.update_queue.put(update)
     return "ok"
 
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Напиши /choose чтобы выбрать персонажа.")
 
-def start(update, context):
-    update.message.reply_text("Привет! Напиши /choose чтобы выбрать персонажа.")
-
-def choose_persona(update, context):
-    keyboard = [
-        [InlineKeyboardButton(p["name"], callback_data=key)]
-        for key, p in personas.items()
-    ]
+async def choose_persona(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton(p["name"], callback_data=key)] for key, p in personas.items()]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     if update.message:
-        update.message.reply_text("Выбери персонажа:", reply_markup=reply_markup)
+        await update.message.reply_text("Выбери персонажа:", reply_markup=reply_markup)
     elif update.callback_query:
-        update.callback_query.edit_message_text("Выбери персонажа:", reply_markup=reply_markup)
+        await update.callback_query.edit_message_text("Выбери персонажа:", reply_markup=reply_markup)
 
-def handle_choice(update, context):
+async def handle_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     choice = query.data
     user_personas[user_id] = personas[choice]["prompt"]
     user_nsfw_status[user_id] = False
 
-    keyboard = [
-        [
-            InlineKeyboardButton("🔁 Сменить персонажа", callback_data="change_persona"),
-            InlineKeyboardButton("🔓 Включить 18+", callback_data="enable_nsfw"),
-            InlineKeyboardButton("❌ Завершить", callback_data="end_session")
-        ]
-    ]
+    keyboard = [[
+        InlineKeyboardButton("🔁 Сменить персонажа", callback_data="change_persona"),
+        InlineKeyboardButton("🔓 Включить 18+", callback_data="enable_nsfw"),
+        InlineKeyboardButton("❌ Завершить", callback_data="end_session")
+    ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    query.answer()
-    context.bot.send_message(chat_id=query.message.chat_id, text=f"Ты выбрал: {personas[choice]['name']}", reply_markup=reply_markup)
+    await query.answer()
+    await context.bot.send_message(chat_id=query.message.chat_id, text=f"Ты выбрал: {personas[choice]['name']}", reply_markup=reply_markup)
 
-    # Отправка аватарки (предполагаем, что файл лежит рядом с main.py)
-    photo_path = f"avatars/{choice}.jpg"  # например: yulia.jpg
+    photo_path = f"avatars/{choice}.jpg"
     try:
         with open(photo_path, 'rb') as photo:
-            context.bot.send_photo(chat_id=query.message.chat_id, photo=photo)
+            await context.bot.send_photo(chat_id=query.message.chat_id, photo=photo)
     except FileNotFoundError:
-        context.bot.send_message(chat_id=query.message.chat_id, text="(Аватарка не найдена)")
+        await context.bot.send_message(chat_id=query.message.chat_id, text="(Аватарка не найдена)")
 
-
-def handle_enable_nsfw(update, context):
+async def handle_enable_nsfw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    user_id = query.from_user.id
-    user_nsfw_status[user_id] = True
-    query.answer()
-    query.edit_message_text(text="🔞 Взрослый режим включён. Можешь говорить откровенно.")
+    user_nsfw_status[query.from_user.id] = True
+    await query.answer()
+    await query.edit_message_text(text="🔞 Взрослый режим включён.")
 
-def handle_change_persona(update, context):
-    query = update.callback_query
-    choose_persona(update=Update.de_json(update.to_dict(), bot), context=context)
+async def handle_change_persona(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await choose_persona(update, context)
 
-def handle_end_session(update, context):
+async def handle_end_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     user_personas.pop(user_id, None)
     user_nsfw_status.pop(user_id, None)
-    query.answer()
-    query.edit_message_text(text="❌ Сессия завершена. Напиши /choose, чтобы начать заново.")
+    await query.answer()
+    await query.edit_message_text(text="❌ Сессия завершена. Напиши /choose, чтобы начать заново.")
 
-def handle_message(update, context):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_message = update.message.text
     prompt_base = user_personas.get(user_id, "Ты загадочный ИИ.")
 
-    if user_nsfw_status.get(user_id):
-        prompt = prompt_base + "\nГовори сексуально, флиртуй, возбуждай, но умно."
-    else:
-        prompt = prompt_base
-
+    prompt = prompt_base + ("\nГовори сексуально..." if user_nsfw_status.get(user_id) else "")
     prompt += f"\nПользователь: {user_message}\nБот:"
     response = get_openrouter_response(prompt)
 
@@ -189,7 +169,7 @@ def handle_message(update, context):
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_markup=reply_markup)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_markup=reply_markup)
 
 def get_openrouter_response(prompt):
     headers = {
@@ -208,5 +188,14 @@ def get_openrouter_response(prompt):
     except Exception as e:
         return f"Ошибка: {e}"
 
+# Регистрация хендлеров
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("choose", choose_persona))
+application.add_handler(CallbackQueryHandler(handle_choice, pattern="^(yulia|diana|margo|sveta|dasha|vika|lera|alisa|katya|eva|oksana|ira|elleria|lilit|hina)$"))
+application.add_handler(CallbackQueryHandler(handle_enable_nsfw, pattern="^enable_nsfw$"))
+application.add_handler(CallbackQueryHandler(handle_change_persona, pattern="^change_persona$"))
+application.add_handler(CallbackQueryHandler(handle_end_session, pattern="^end_session$"))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(host="0.0.0.0", port=5000)
