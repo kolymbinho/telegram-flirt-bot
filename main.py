@@ -96,9 +96,9 @@ personas = {
 
 
 @app.route("/webhook", methods=["POST"])
-def webhook():
+async def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
-    application.update_queue.put(update)
+    await application.process_update(update)
     return "ok"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
