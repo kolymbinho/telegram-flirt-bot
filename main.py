@@ -98,29 +98,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_markup=reply_markup)
 
 def get_openrouter_response(prompt):
-    print("Отправляю запрос в OpenRouter с промптом:", prompt)   # ← ВОТ ЭТА СТРОКА
+    print("Отправляю запрос в OpenRouter с промптом:", prompt)
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
     }
-   
-       data = {
+
+    data = {
         "model": "meta-llama/llama-3-8b-instruct",
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 1.0,
         "top_p": 0.9
     }
 
-      try:
+    try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
         print("OpenRouter response:", response.status_code, response.text)
         return response.json().get("choices", [{"message": {"content": "Что-то пошло не так."}}])[0]["message"]["content"].strip()
     except Exception as e:
         print("Exception in get_openrouter_response:", e)
         return f"Ошибка: {e}"
-
-
 
 # --- Main запуск ---
 
