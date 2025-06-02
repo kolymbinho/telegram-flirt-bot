@@ -201,19 +201,8 @@ async def set_webhook():
     print("Webhook установлен:", f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
 
 if __name__ == "__main__":
-    # Устанавливаем webhook
-    application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
-    print("Webhook установлен:", f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+    import asyncio
+    asyncio.run(set_webhook())
 
-    # Запускаем Flask-приложение
-    app = Flask(__name__)
-
-    @app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
-    def webhook():
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        application.update_queue.put_nowait(update)
-        return "ok"
-
-    PORT = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=PORT)
 
