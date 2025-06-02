@@ -210,19 +210,13 @@ async def set_webhook():
 if __name__ == "__main__":
     import asyncio
 
-    async def main():
-        # Устанавливаем webhook
-        await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
-        print("Webhook установлен:", f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+    # Получаем текущий event loop (уже работающий на Render)
+    loop = asyncio.get_event_loop()
 
-        # Запускаем встроенный webhook-сервер от python-telegram-bot
-        await application.run_webhook(
-            listen="0.0.0.0",            # слушаем на всех адресах (нужно для Render)
-            port=PORT,                   # порт берем из переменной окружения
-            url_path=TELEGRAM_TOKEN,     # endpoint для Telegram
-            webhook_url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}",  # Полный URL для Telegram
-        )
+    # Запускаем нашу main задачу в существующем loop
+    loop.create_task(main())
 
-    asyncio.run(main())
+    # Чтобы приложение не завершилось мгновенно
+    loop.run_forever()
 
 
