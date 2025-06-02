@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -88,8 +89,7 @@ personas = {
     }
 }
 
-
-
+# --- Handlers ---
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /choose чтобы выбрать персонажа.")
@@ -167,20 +167,40 @@ def get_openrouter_response(prompt):
         print("Exception in get_openrouter_response:", e)
         return f"Ошибка: {e}"
 
+# --- Handlers Registration ---
 
-# Handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("choose", choose_persona))
-application.add_handler(CallbackQueryHandler(handle_choice, pattern="^(yulia|diana|margo|sveta)$"))
+
+# <-- ВАЖНО: тут pattern я тебе исправил на ВСЕ ПЕРСОНАЖИ, а не только 4! -->
+pattern_personas = "^(" + "|".join(personas.keys()) + ")$"
+application.add_handler(CallbackQueryHandler(handle_choice, pattern=pattern_personas))
+
 application.add_handler(CallbackQueryHandler(handle_enable_nsfw, pattern="^enable_nsfw$"))
 application.add_handler(CallbackQueryHandler(handle_change_persona, pattern="^change_persona$"))
 application.add_handler(CallbackQueryHandler(handle_end_session, pattern="^end_session$"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# Запуск БЕЗ webhooks — run_polling
-if __name__ == "__main__":
-    application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+# --- Запуск через FLASK + Webhook (ПРАВИЛЬНЫЙ) ---
+
+PORT = int(os.environ.get('PORT', 10000))
+app = Flask(__name__)
+
+@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put(update)
+    return "ok"
+
+@app.route('/')
+def index():
+    return "Бот работает!"
+
+async def set_webhook():
+    await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
     print("Webhook установлен:", f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
 
+if __name__ == "__main__":
+    asyncio.run(set_webhook())
     app.run(host='0.0.0.0', port=PORT)
 
