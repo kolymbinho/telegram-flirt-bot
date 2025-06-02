@@ -45,7 +45,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def choose_persona(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(p["name"], callback_data=key)] for key, p in personas.items()]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Выбери персонажа:", reply_markup=reply_markup)
+
+    if update.message:
+        await update.message.reply_text("Выбери персонажа:", reply_markup=reply_markup)
+    elif update.callback_query:
+        await update.callback_query.edit_message_text("Выбери персонажа:", reply_markup=reply_markup)
 
 async def handle_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
