@@ -12,6 +12,7 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 import requests
+from flask import Flask, request
 
 load_dotenv()
 
@@ -160,10 +161,7 @@ def get_openrouter_response(prompt):
     }
     try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-        
-        # ---> Вставляем ЛОГ В ЛОГИ <---
         print("OpenRouter response:", response.status_code, response.text)
-        
         return response.json().get("choices", [{"message": {"content": "Что-то пошло не так."}}])[0]["message"]["content"].strip()
     except Exception as e:
         print("Exception in get_openrouter_response:", e)
