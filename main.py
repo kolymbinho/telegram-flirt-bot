@@ -173,9 +173,7 @@ application.add_handler(CallbackQueryHandler(handle_change_persona, pattern="^ch
 application.add_handler(CallbackQueryHandler(handle_end_session, pattern="^end_session$"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
+# Запуск БЕЗ webhooks — run_polling
 if __name__ == "__main__":
-    application.run_webhook(
-        listen="0.0.0.0",
-        port=10000,
-        webhook_url=WEBHOOK_URL
-    )
+    application.run_polling()
+
