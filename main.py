@@ -190,12 +190,12 @@ app = Flask(__name__)
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
 
-async def process():
-    await application.process_update(update)
+    async def process():
+        await application.process_update(update)
 
-asyncio.run(process())
+    asyncio.run(process())
 
-return "ok"
+    return "ok"
 
 
 @app.route('/')
