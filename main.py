@@ -209,7 +209,20 @@ async def set_webhook():
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(set_webhook())
 
-    app.run(host='0.0.0.0', port=PORT)
+    async def main():
+        # Устанавливаем webhook
+        await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+        print("Webhook установлен:", f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+
+        # Запускаем встроенный webhook-сервер от python-telegram-bot
+        await application.run_webhook(
+            listen="0.0.0.0",            # слушаем на всех адресах (нужно для Render)
+            port=PORT,                   # порт берем из переменной окружения
+            url_path=TELEGRAM_TOKEN,     # endpoint для Telegram
+            webhook_url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}",  # Полный URL для Telegram
+        )
+
+    asyncio.run(main())
+
 
