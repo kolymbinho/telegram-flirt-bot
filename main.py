@@ -99,7 +99,7 @@ def get_openrouter_response(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "openai/gpt-3.5-turbo",
+        "model": "meta-llama/llama-3-8b-instruct",
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 1.0,
         "top_p": 0.9
