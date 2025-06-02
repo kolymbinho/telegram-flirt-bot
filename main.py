@@ -179,5 +179,8 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_m
 
 # Запуск БЕЗ webhooks — run_polling
 if __name__ == "__main__":
-    application.run_polling()
+    application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+    print("Webhook установлен:", f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}")
+
+    app.run(host='0.0.0.0', port=PORT)
 
