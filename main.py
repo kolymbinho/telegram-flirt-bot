@@ -167,7 +167,7 @@ def get_openrouter_response(prompt):
 # Handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("choose", choose_persona))
-application.add_handler(CallbackQueryHandler(handle_choice, pattern="^(yulia|diana|margo|sveta|dasha|vika|lera|alisa|katya|eva|oksana|ira|elleria|lilit|hina)$"))
+application.add_handler(CallbackQueryHandler(handle_choice, pattern="^(yulia|diana|margo|sveta)$"))
 application.add_handler(CallbackQueryHandler(handle_enable_nsfw, pattern="^enable_nsfw$"))
 application.add_handler(CallbackQueryHandler(handle_change_persona, pattern="^change_persona$"))
 application.add_handler(CallbackQueryHandler(handle_end_session, pattern="^end_session$"))
@@ -179,4 +179,3 @@ if __name__ == "__main__":
         port=10000,
         webhook_url=WEBHOOK_URL
     )
-
