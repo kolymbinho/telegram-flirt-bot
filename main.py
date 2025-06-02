@@ -100,11 +100,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def get_openrouter_response(prompt):
     print("Отправляю запрос в OpenRouter с промптом:", prompt)
 
-    # ДО заголовков:
-    print(f"API KEY в коде: [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
+    # Очищаем ключ от пробелов и переводов строки
+    api_key_clean = OPENROUTER_API_KEY.strip()
+
+    # Печатаем для контроля
+    print(f"API KEY в коде (сырой): [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
+    print(f"API KEY очищенный: [{api_key_clean}] длина: {len(api_key_clean)}")
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY.strip()}",
+        "Authorization": f"Bearer {api_key_clean}",
         "Content-Type": "application/json"
     }
 
@@ -122,6 +126,7 @@ def get_openrouter_response(prompt):
     except Exception as e:
         print("Exception in get_openrouter_response:", e)
         return f"Ошибка: {e}"
+
 
 # --- Main запуск ---
 
