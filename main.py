@@ -191,6 +191,7 @@ def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
 
     async def process():
+        await application.initialize()
         await application.process_update(update)
 
     asyncio.run(process())
