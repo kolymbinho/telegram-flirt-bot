@@ -187,9 +187,9 @@ PORT = int(os.environ.get('PORT', 10000))
 app = Flask(__name__)
 
 @app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
-async def webhook():
+def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    await application.update_queue.put(update)
+    application.update_queue.put_nowait(update)
     return "ok"
 
 @app.route('/')
