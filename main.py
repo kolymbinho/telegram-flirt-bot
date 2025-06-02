@@ -169,6 +169,7 @@ def get_openrouter_response(prompt):
         print("Exception in get_openrouter_response:", e)
         return f"Ошибка: {e}"
 
+
 # Handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("choose", choose_persona))
