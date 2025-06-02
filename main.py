@@ -190,10 +190,8 @@ app = Flask(__name__)
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
 
-    async def process():
-        await application.process_update(update)
-
-    asyncio.run(process())
+       loop = asyncio.get_event_loop()
+    loop.create_task(application.process_update(update))
 
     return "ok"
 
