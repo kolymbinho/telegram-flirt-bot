@@ -189,9 +189,13 @@ app = Flask(__name__)
 @app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    import asyncio
-    asyncio.create_task(application.process_update(update))
-    return "ok"
+
+async def process():
+    await application.process_update(update)
+
+asyncio.run(process())
+
+return "ok"
 
 
 @app.route('/')
