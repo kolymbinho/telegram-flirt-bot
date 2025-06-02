@@ -101,7 +101,7 @@ def get_openrouter_response(prompt):
     print("Отправляю запрос в OpenRouter с промптом:", prompt)
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY.strip()}",
         "Content-Type": "application/json"
     }
 
