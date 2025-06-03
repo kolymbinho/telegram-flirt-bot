@@ -113,11 +113,12 @@ def get_openrouter_response(prompt):
     }
 
     data = {
-        "model": "meta-llama/llama-3-8b-instruct",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 1.0,
-        "top_p": 0.9
-    }
+    "model": "meta-llama/llama-3.3-8b-instruct:free",
+    "messages": [{"role": "user", "content": prompt}],
+    "temperature": 1.0,
+    "top_p": 0.9
+}
+
 
     try:
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
