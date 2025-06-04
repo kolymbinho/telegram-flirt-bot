@@ -99,35 +99,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def get_openrouter_response(prompt):
     print("Отправляю запрос в OpenRouter с промптом:", prompt)
+    print(f"API KEY в коде: [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
 
-    # Очищаем ключ от пробелов и переводов строки
     api_key_clean = OPENROUTER_API_KEY.strip()
 
-    # Печатаем для контроля
-   print("Отправляю запрос в OpenRouter с промптом:", prompt)
-print(f"API KEY в коде: [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
+    headers = {
+        "Authorization": f"Bearer {api_key_clean}",
+        "Content-Type": "application/json"
+    }
 
-api_key_clean = OPENROUTER_API_KEY.strip()
+    data = {
+        "model": "meta-llama/llama-3.3-8b-instruct:free",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 1.0,
+        "top_p": 0.9
+    }
 
-headers = {
-    "Authorization": f"Bearer {api_key_clean}",
-    "Content-Type": "application/json"
-}
-
-data = {
-    "model": "meta-llama/llama-3.3-8b-instruct:free",
-    "messages": [{"role": "user", "content": prompt}],
-    "temperature": 1.0,
-    "top_p": 0.9
-}
-
-try:
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-    print("OpenRouter response:", response.status_code, response.text)
-    return response.json().get("choices", [{"message": {"content": "Что-то пошло не так."}}])[0]["message"]["content"].strip()
-except Exception as e:
-    print("Exception in get_openrouter_response:", e)
-    return f"Ошибка: {e}"
+    try:
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+        print("OpenRouter response:", response.status_code, response.text)
+        return response.json().get("choices", [{"message": {"content": "Что-то пошло не так."}}])[0]["message"]["content"].strip()
+    except Exception as e:
+        print("Exception in get_openrouter_response:", e)
+        return f"Ошибка: {e}"
 
 
 # --- Main запуск ---
