@@ -104,29 +104,30 @@ def get_openrouter_response(prompt):
     api_key_clean = OPENROUTER_API_KEY.strip()
 
     # Печатаем для контроля
-    print(f"API KEY в коде (сырой): [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
-    print(f"API KEY очищенный: [{api_key_clean}] длина: {len(api_key_clean)}")
+   print("Отправляю запрос в OpenRouter с промптом:", prompt)
+print(f"API KEY в коде: [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
 
-    headers = {
-        "Authorization": f"Bearer {api_key_clean}",
-        "Content-Type": "application/json"
-    }
+api_key_clean = OPENROUTER_API_KEY.strip()
 
-    data = {
+headers = {
+    "Authorization": f"Bearer {api_key_clean}",
+    "Content-Type": "application/json"
+}
+
+data = {
     "model": "meta-llama/llama-3.3-8b-instruct:free",
     "messages": [{"role": "user", "content": prompt}],
     "temperature": 1.0,
     "top_p": 0.9
 }
 
-
-    try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-        print("OpenRouter response:", response.status_code, response.text)
-        return response.json().get("choices", [{"message": {"content": "Что-то пошло не так."}}])[0]["message"]["content"].strip()
-    except Exception as e:
-        print("Exception in get_openrouter_response:", e)
-        return f"Ошибка: {e}"
+try:
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+    print("OpenRouter response:", response.status_code, response.text)
+    return response.json().get("choices", [{"message": {"content": "Что-то пошло не так."}}])[0]["message"]["content"].strip()
+except Exception as e:
+    print("Exception in get_openrouter_response:", e)
+    return f"Ошибка: {e}"
 
 
 # --- Main запуск ---
