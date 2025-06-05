@@ -99,9 +99,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def get_openrouter_response(prompt):
     print("Отправляю запрос в OpenRouter с промптом:", prompt)
-    print(f"API KEY в коде: [{OPENROUTER_API_KEY}] длина: {len(OPENROUTER_API_KEY)}")
 
-    api_key_clean = OPENROUTER_API_KEY.strip()
+    api_key_clean = (OPENROUTER_API_KEY or "").strip()
+    if not api_key_clean:
+        print("OpenRouter API key is not set")
+        return "Ошибка: ключ API не задан."
+    print(f"API KEY в коде: [{api_key_clean}] длина: {len(api_key_clean)}")
 
     headers = {
         "Authorization": f"Bearer {api_key_clean}",
