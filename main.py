@@ -7,6 +7,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 # Загружаем переменные из .env
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")  # <-- Берем TELEGRAM TOKEN из переменных окружения
 
 # Функция для получения ответа от GPT-4o
 def get_openai_response(prompt):
@@ -51,8 +52,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Запуск бота
 if __name__ == "__main__":
-    # ВСТАВЬ СЮДА свой TELEGRAM TOKEN от @BotFather
-    TELEGRAM_TOKEN = "ВАШ_TELEGRAM_BOT_TOKEN"
+    if not TELEGRAM_TOKEN:
+        print("Ошибка: TELEGRAM_TOKEN не задан!")
+        exit(1)
 
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
